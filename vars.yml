@@ -1,0 +1,57 @@
+ontap_hostname: aero-cluster
+
+nfs_svm:
+  - { name: "nfs_test", root_volume: "nfs_test_root", root_volume_aggregate: "aero_01_FC_1", root_volume_security_style: "unix", aggr_list: "aero_01_FC_1", allowed_protocols: "nfs,cifs", language: "C.UTF-8" }
+
+
+#nfs_root_vol_resize:
+#  - {nfs_vserver: "nfs_test", nfs_root_vol: "nfs_test_root", vol_size: "10g" }
+
+
+export_policy_rule_create:
+  - {vserver: "nfs_test" }
+
+
+enable_nfs:
+  - {vserver: "nfs_test" }
+
+
+enable_showmount:
+  - {vserver: "nfs_test" }
+
+
+#dns_for_nfs:
+#  - { vserver: "nfs_test", domain: "lvs.ebay.com", nameserver_ips: "192.168.0.253,192.170.0.253" }
+
+
+#ls_mirror_volumes:
+#  - { mirror_name: "nfs_test_root_ls_mirror1", vserver: "nfs_test", ls_mirror_aggregate: "aggr1_data_01", vol_size: "10", vol_unit: "gb" }
+#  - { mirror_name: "nfs_test_root_ls_mirror2", vserver: "nfs_test", ls_mirror_aggregate: "aero_01_FC_1", vol_size: "10", vol_unit: "gb" }
+
+
+#ls_snapmirror_mirror:
+# - { svm_root: "nfs_test_root", dest_mirror_name: "nfs_test_root_ls_mirror1", src_vserver: "nfs_test", dst_vserver: "nfs_test" }
+# - { svm_root: "nfs_test_root", dest_mirror_name: "nfs_test_root_ls_mirror2", src_vserver: "nfs_test", dst_vserver: "nfs_test" }
+
+
+#init_ls_mirrors:
+# - { src_vserver: "nfs_test", svm_root: "nfs_test_root", dst_vserver: "nfs_test", dest_mirror_name: "nfs_test_root_ls_mirror1" }
+# - { src_vserver: "nfs_test", svm_root: "nfs_test_root", dst_vserver: "nfs_test", dest_mirror_name: "nfs_test_root_ls_mirror2" }
+
+
+nfs_lifs:
+  - {int_name: "aero-web-svm-nfs", vserver: "nfs_test", ip: "172.16.110.13", netmask: "255.255.255.0", home_node: "aero-01", home_port: "e0c", firewall_policy: "data", role: "data", failover_policy: "system-defined", data_protocol: "nfs,cifs" }
+#  - {int_name: "cluster1-01-nfs-e0f", vserver: "nfs_test", ip: "192.168.0.62", netmask: "255.255.255.0", home_node: "cluster1-01", home_port: "e0f", firewall_policy: "data", role: "data", failover_policy: "system-defined", data_protocol: "nfs,cifs" }
+#  - {int_name: "cluster1-02-nfs-e0e", vserver: "nfs_test", ip: "192.168.0.63", netmask: "255.255.255.0", home_node: "cluster1-02", home_port: "e0e", firewall_policy: "data", role: "data", failover_policy: "system-defined", data_protocol: "nfs,cifs" }
+#  - {int_name: "cluster1-02-nfs-e0f", vserver: "nfs_test", ip: "192.168.0.64", netmask: "255.255.255.0", home_node: "cluster1-02", home_port: "e0f", firewall_policy: "data", role: "data", failover_policy: "system-defined", data_protocol: "nfs,cifs" }
+#  - {int_name: "cluster1-vsnfs01-mgmt", vserver: "nfs_test", ip: "192.168.0.66", netmask: "255.255.255.0", home_node: "cluster1-01", home_port: "e0g", firewall_policy: "mgmt", role: "data", failover_policy: "system-defined", data_protocol: "none" }
+
+
+#create_securecopy_snapshot_policy:
+#  - {vserver: "nfs_test" }
+
+
+network_routes:
+  - {vserver: "nfs_test", gateway: "172.16.110.2" }
+#  - {vserver: "nfs_test", gateway: "192.150.0.1" }
+

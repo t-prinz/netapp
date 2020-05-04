@@ -1,0 +1,63 @@
+---
+- name: Get volume information
+  hosts: localhost
+  gather_facts: false
+  vars:
+    credfile: "~/Documents/.mycreds/democreds.yml"
+  tasks:
+
+### Get the credentials from either a local file or an Ansible Tower Custom Credential
+  - name: Check for credentials file
+    stat:
+      path: "{{ credfile }}"
+    register: stat_results
+
+  - name: Define credentials using local file
+    block:
+
+    - name: Include variable definitions from local file
+      include_vars:
+        file: "{{ credfile }}"
+
+    - name: Define Ansible Tower credentials based on local file
+      set_fact:
+        ontap_username: "{{ cf_ontap_username }}"
+        ontap_password: "{{ cf_ontap_password }}"
+
+    when: stat_results.stat.exists
+
+  - name: Define credentials using Ansible Tower custom credentials
+    block:
+
+    - name: Define Ansible Tower credentials based on custom credential
+      set_fact:
+        ontap_username: "{{ at_ontap_username }}"
+        ontap_password: "{{ at_ontap_password }}"
+
+    when: not stat_results.stat.exists
+### End get the credentials from either a local file or an Ansible Tower Custom Credential
+
+  - name: Get list of volumes
+    na_ontap_command:
+      command: ['volume', 'show']
+      hostname: "{{ ontap_hostname }}"
+      username: "{{ ontap_username }}"
+      password: "{{ ontap_password }}"
+      https: true
+      validate_certs: false
+    register: vol_info
+#    with_items: "{{ nfs_root_vol_resize }}"
+#    tags:
+#      - nfs_root_vol_resize
+
+  - name: Print volume info
+    debug:
+      var: vol_info
+
+#  - name: Increase NFS root volume to 10GB
+#    na_ontap_command:
+#      command: ['volume', 'size', '-vserver', "{{ item.nfs_vserver }}", '-volume', "{{ item.nfs_root_vol }}", '-new-size', "{{ item.vol_size }}"]
+#      <<: *login
+#    with_items: "{{ nfs_root_vol_resize }}"
+#    tags:
+#      - nfs_root_vol_resize
