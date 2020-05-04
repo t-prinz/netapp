@@ -4,6 +4,7 @@
   gather_facts: false
   vars:
     credfile: "~/Documents/.mycreds/democreds.yml"
+    ontap_hostname: "aero-cluster"
   tasks:
 
 ### Get the credentials from either a local file or an Ansible Tower Custom Credential
