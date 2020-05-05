@@ -1,12 +1,11 @@
 ---
-- name: Get volume information
+- name: Create and configure ONTAP NFS SVM
   hosts: localhost
   gather_facts: false
   vars_files:
     vars.yml
   vars:
     credfile: "~/Documents/.mycreds/democreds.yml"
-#    ontap_hostname: "aero-cluster"
   tasks:
 
 ### Get the credentials from either a local file or an Ansible Tower Custom Credential
@@ -49,23 +48,12 @@
         https: true
         validate_certs: false
         
-
   - name: Get list of volumes
     na_ontap_command:
       command: ['volume', 'show']
       <<: *ontap_connection_info
-#      hostname: "{{ ontap_hostname }}"
-#      username: "{{ ontap_username }}"
-#      password: "{{ ontap_password }}"
-#      https: true
-#      validate_certs: false
     register: vol_info
 
-  - name: Print volume info
-    debug:
-      var: vol_info
-
-### Create NFS SVM ###
   - name: Create NFS SVM
     na_ontap_svm:
       state: present
@@ -77,59 +65,27 @@
       allowed_protocols: "{{ item.allowed_protocols }}"
       language: "{{ item.language }}"
       snapshot_policy: default
-      hostname: "{{ ontap_hostname }}"
-      username: "{{ ontap_username }}"
-      password: "{{ ontap_password }}"
-      https: true
-      validate_certs: false
+      <<: *ontap_connection_info
     with_items: "{{ nfs_svm }}"
-    tags:
-      - nfs_svm
-### End creation of NFS SVM ###
 
-
-###  Create export-policy rule ###
   - name: Modify default export-policy rule
     na_ontap_command:
       command: ['export-policy', 'rule', 'modify', '-vserver', "{{ item.vserver }}", '-policyname', 'default', '-ruleindex', '1', '-protocol', 'nfs', '-clientmatch', '0.0.0.0/0', '-rorule', 'any', '-rwrule', 'any', '-superuser', 'sys']
-      hostname: "{{ ontap_hostname }}"
-      username: "{{ ontap_username }}"
-      password: "{{ ontap_password }}"
-      https: true
-      validate_certs: false
+      <<: *ontap_connection_info
     with_items: "{{ export_policy_rule_create }}"
-    tags:
-      - export_policy_rule_create
-### End create export-policy rule ###
 
-
-###  Enable NFS ###
   - name: Enable NFS
     na_ontap_command:
       command: ['nfs', 'create', '-vserver', "{{ item.vserver }}"]
-      hostname: "{{ ontap_hostname }}"
-      username: "{{ ontap_username }}"
-      password: "{{ ontap_password }}"
-      https: true
-      validate_certs: false
+      <<: *ontap_connection_info
     with_items: "{{ enable_nfs }}"
-    tags:
-      - enable_nfs
 
   - name: Enable showmount
     na_ontap_command:
       command: ['nfs', 'modify', '-vserver', "{{ item.vserver }}", '-showmount', 'enabled', '-v4.0', 'enabled', '-v4.1', 'enabled']
-      hostname: "{{ ontap_hostname }}"
-      username: "{{ ontap_username }}"
-      password: "{{ ontap_password }}"
-      https: true
-      validate_certs: false
+      <<: *ontap_connection_info
     with_items: "{{ enable_showmount }}"
-    tags:
-      - enable_showmount
-### End create export-policy rule ###
 
-### Create NFS LIFs ###
   - name: Create NFS LIF
     na_ontap_interface:
       state: present
@@ -144,18 +100,9 @@
       vserver: "{{ item.vserver }}"
       failover_policy: "{{ item.failover_policy }}"
       protocols: "{{ item.data_protocol }}"
-      hostname: "{{ ontap_hostname }}"
-      username: "{{ ontap_username }}"
-      password: "{{ ontap_password }}"
-      https: true
-      validate_certs: false
+      <<: *ontap_connection_info
     with_items: "{{ nfs_lifs }}"
-    tags:
-      - nfs_lifs
-### End creation of NFS LIFs ###
 
-
-### Create network routes ###
   - name: Create network routes
     na_ontap_net_routes:
       state: present
@@ -163,12 +110,5 @@
       destination: 0.0.0.0/0
       gateway: "{{ item.gateway }}"
       metric: "20"
-      hostname: "{{ ontap_hostname }}"
-      username: "{{ ontap_username }}"
-      password: "{{ ontap_password }}"
-      https: true
-      validate_certs: false
+      <<: *ontap_connection_info
     with_items: "{{ network_routes }}"
-    tags:
-      - network_routes
-### End creation network routes ###

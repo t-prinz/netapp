@@ -6,7 +6,6 @@
     vars.yml
   vars:
     credfile: "~/Documents/.mycreds/democreds.yml"
-#    ontap_hostname: "aero-cluster"
   tasks:
 
 ### Get the credentials from either a local file or an Ansible Tower Custom Credential
@@ -40,27 +39,21 @@
     when: not stat_results.stat.exists
 ### End get the credentials from either a local file or an Ansible Tower Custom Credential
 
+  - name: Define connection variable
+    set_fact:
+      ontap_connection: &ontap_connection_info
+        hostname: "{{ ontap_hostname }}"
+        username: "{{ ontap_username }}"
+        password: "{{ ontap_password }}"
+        https: true
+        validate_certs: false
+
   - name: Get list of volumes
     na_ontap_command:
       command: ['volume', 'show']
-      hostname: "{{ ontap_hostname }}"
-      username: "{{ ontap_username }}"
-      password: "{{ ontap_password }}"
-      https: true
-      validate_certs: false
+      <<: *ontap_connection_info
     register: vol_info
-#    with_items: "{{ nfs_root_vol_resize }}"
-#    tags:
-#      - nfs_root_vol_resize
 
   - name: Print volume info
     debug:
       var: vol_info
-
-#  - name: Increase NFS root volume to 10GB
-#    na_ontap_command:
-#      command: ['volume', 'size', '-vserver', "{{ item.nfs_vserver }}", '-volume', "{{ item.nfs_root_vol }}", '-new-size', "{{ item.vol_size }}"]
-#      <<: *login
-#    with_items: "{{ nfs_root_vol_resize }}"
-#    tags:
-#      - nfs_root_vol_resize

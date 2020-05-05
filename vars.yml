@@ -3,18 +3,11 @@ ontap_hostname: aero-cluster
 nfs_svm:
   - { name: "nfs_test", root_volume: "nfs_test_root", root_volume_aggregate: "aero_01_FC_1", root_volume_security_style: "unix", aggr_list: "aero_01_FC_1", allowed_protocols: "nfs,cifs", language: "C.UTF-8" }
 
-
-#nfs_root_vol_resize:
-#  - {nfs_vserver: "nfs_test", nfs_root_vol: "nfs_test_root", vol_size: "10g" }
-
-
 export_policy_rule_create:
   - {vserver: "nfs_test" }
 
-
 enable_nfs:
   - {vserver: "nfs_test" }
-
 
 enable_showmount:
   - {vserver: "nfs_test" }
@@ -22,12 +15,5 @@ enable_showmount:
 nfs_lifs:
   - {int_name: "nfs_test_lif1", vserver: "nfs_test", ip: "172.16.110.16", netmask: "255.255.255.0", home_node: "aero-01", home_port: "e0c", firewall_policy: "data", role: "data", failover_policy: "system-defined", data_protocol: "nfs,cifs" }
 
-
-#create_securecopy_snapshot_policy:
-#  - {vserver: "nfs_test" }
-
-
 network_routes:
   - {vserver: "nfs_test", gateway: "172.16.110.2" }
-#  - {vserver: "nfs_test", gateway: "192.150.0.1" }
-
