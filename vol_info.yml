@@ -2,9 +2,11 @@
 - name: Get volume information
   hosts: localhost
   gather_facts: false
+  vars_files:
+    vars.yml
   vars:
     credfile: "~/Documents/.mycreds/democreds.yml"
-    ontap_hostname: "aero-cluster"
+#    ontap_hostname: "aero-cluster"
   tasks:
 
 ### Get the credentials from either a local file or an Ansible Tower Custom Credential

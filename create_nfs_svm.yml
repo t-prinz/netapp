@@ -1,0 +1,163 @@
+---
+- name: Get volume information
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    vars.yml
+  vars:
+    credfile: "~/Documents/.mycreds/democreds.yml"
+#    ontap_hostname: "aero-cluster"
+  tasks:
+
+### Get the credentials from either a local file or an Ansible Tower Custom Credential
+  - name: Check for credentials file
+    stat:
+      path: "{{ credfile }}"
+    register: stat_results
+
+  - name: Define credentials using local file
+    block:
+
+    - name: Include variable definitions from local file
+      include_vars:
+        file: "{{ credfile }}"
+
+    - name: Define Ansible Tower credentials based on local file
+      set_fact:
+        ontap_username: "{{ cf_ontap_username }}"
+        ontap_password: "{{ cf_ontap_password }}"
+
+    when: stat_results.stat.exists
+
+  - name: Define credentials using Ansible Tower custom credentials
+    block:
+
+    - name: Define Ansible Tower credentials based on custom credential
+      set_fact:
+        ontap_username: "{{ at_ontap_username }}"
+        ontap_password: "{{ at_ontap_password }}"
+
+    when: not stat_results.stat.exists
+### End get the credentials from either a local file or an Ansible Tower Custom Credential
+
+  - name: Get list of volumes
+    na_ontap_command:
+      command: ['volume', 'show']
+      hostname: "{{ ontap_hostname }}"
+      username: "{{ ontap_username }}"
+      password: "{{ ontap_password }}"
+      https: true
+      validate_certs: false
+    register: vol_info
+
+  - name: Print volume info
+    debug:
+      var: vol_info
+
+### Create NFS SVM ###
+  - name: Create NFS SVM
+    na_ontap_svm:
+      state: present
+      name: "{{ item.name }}"
+      root_volume: "{{ item.root_volume }}"
+      root_volume_aggregate: "{{ item.root_volume_aggregate }}"
+      root_volume_security_style: "{{ item.root_volume_security_style }}"
+      aggr_list: "{{ item.aggr_list }}"
+      allowed_protocols: "{{ item.allowed_protocols }}"
+      language: "{{ item.language }}"
+      snapshot_policy: default
+      hostname: "{{ ontap_hostname }}"
+      username: "{{ ontap_username }}"
+      password: "{{ ontap_password }}"
+      https: true
+      validate_certs: false
+    with_items: "{{ nfs_svm }}"
+    tags:
+      - nfs_svm
+### End creation of NFS SVM ###
+
+
+###  Create export-policy rule ###
+  - name: Modify default export-policy rule
+    na_ontap_command:
+      command: ['export-policy', 'rule', 'modify', '-vserver', "{{ item.vserver }}", '-policyname', 'default', '-ruleindex', '1', '-protocol', 'nfs', '-clientmatch', '0.0.0.0/0', '-rorule', 'any', '-rwrule', 'any', '-superuser', 'sys']
+      hostname: "{{ ontap_hostname }}"
+      username: "{{ ontap_username }}"
+      password: "{{ ontap_password }}"
+      https: true
+      validate_certs: false
+    with_items: "{{ export_policy_rule_create }}"
+    tags:
+      - export_policy_rule_create
+### End create export-policy rule ###
+
+
+###  Enable NFS ###
+  - name: Enable NFS
+    na_ontap_command:
+      command: ['nfs', 'create', '-vserver', "{{ item.vserver }}"]
+      hostname: "{{ ontap_hostname }}"
+      username: "{{ ontap_username }}"
+      password: "{{ ontap_password }}"
+      https: true
+      validate_certs: false
+    with_items: "{{ enable_nfs }}"
+    tags:
+      - enable_nfs
+
+  - name: Enable showmount
+    na_ontap_command:
+      command: ['nfs', 'modify', '-vserver', "{{ item.vserver }}", '-showmount', 'enabled', '-v4.0', 'enabled', '-v4.1', 'enabled']
+      hostname: "{{ ontap_hostname }}"
+      username: "{{ ontap_username }}"
+      password: "{{ ontap_password }}"
+      https: true
+      validate_certs: false
+    with_items: "{{ enable_showmount }}"
+    tags:
+      - enable_showmount
+### End create export-policy rule ###
+
+### Create NFS LIFs ###
+  - name: Create NFS LIF
+    na_ontap_interface:
+      state: present
+      interface_name: "{{ item.int_name }}"
+      home_port: "{{ item.home_port }}"
+      home_node: "{{ item.home_node }}"
+      firewall_policy: "{{ item.firewall_policy }}"
+      is_auto_revert: false
+      address: "{{ item.ip }}"
+      netmask: "{{ item.netmask }}"
+      role: "{{ item.role }}"
+      vserver: "{{ item.vserver }}"
+      failover_policy: "{{ item.failover_policy }}"
+      protocols: "{{ item.data_protocol }}"
+      hostname: "{{ ontap_hostname }}"
+      username: "{{ ontap_username }}"
+      password: "{{ ontap_password }}"
+      https: true
+      validate_certs: false
+    with_items: "{{ nfs_lifs }}"
+    tags:
+      - nfs_lifs
+### End creation of NFS LIFs ###
+
+
+### Create network routes ###
+  - name: Create network routes
+    na_ontap_net_routes:
+      state: present
+      vserver: "{{ item.vserver }}"
+      destination: 0.0.0.0/0
+      gateway: "{{ item.gateway }}"
+      metric: "20"
+      hostname: "{{ ontap_hostname }}"
+      username: "{{ ontap_username }}"
+      password: "{{ ontap_password }}"
+      https: true
+      validate_certs: false
+    with_items: "{{ network_routes }}"
+    tags:
+      - network_routes
+### End creation network routes ###
