@@ -48,12 +48,6 @@
         https: true
         validate_certs: false
         
-  - name: Get list of volumes
-    na_ontap_command:
-      command: ['volume', 'show']
-      <<: *ontap_connection_info
-    register: vol_info
-
   - name: Create NFS SVM
     na_ontap_svm:
       state: present
