@@ -40,14 +40,25 @@
     when: not stat_results.stat.exists
 ### End get the credentials from either a local file or an Ansible Tower Custom Credential
 
+  - name: Define connection variable
+    set_fact:
+      ontap_connection: &ontap_connection_info
+        hostname: "{{ ontap_hostname }}"
+        username: "{{ ontap_username }}"
+        password: "{{ ontap_password }}"
+        https: true
+        validate_certs: false
+        
+
   - name: Get list of volumes
     na_ontap_command:
       command: ['volume', 'show']
-      hostname: "{{ ontap_hostname }}"
-      username: "{{ ontap_username }}"
-      password: "{{ ontap_password }}"
-      https: true
-      validate_certs: false
+      <<: *ontap_connection_info
+#      hostname: "{{ ontap_hostname }}"
+#      username: "{{ ontap_username }}"
+#      password: "{{ ontap_password }}"
+#      https: true
+#      validate_certs: false
     register: vol_info
 
   - name: Print volume info
